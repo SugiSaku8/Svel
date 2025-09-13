@@ -22,23 +22,36 @@
 
   function updateGraph() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    const SCALE = 2; // pixel per cent for better visibility
-    history.forEach((cent, idx) => {
-      const x = (idx / MAX_POINTS) * canvas.width;
-      const y = canvas.height / 2 - cent * SCALE;
-      ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = '#008cff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    // baseline
+    
+    // Draw baseline
     ctx.beginPath();
     ctx.moveTo(0, canvas.height / 2);
     ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.strokeStyle = '#aaa';
     ctx.stroke();
+    
+    // Draw graph line
+    if (history.length > 0) {
+      ctx.beginPath();
+      const SCALE = 2; // pixel per cent for better visibility
+      const startIdx = Math.max(0, history.length - MAX_POINTS);
+      
+      // Start from the first point
+      const firstX = 0;
+      const firstY = canvas.height / 2 - history[startIdx] * SCALE;
+      ctx.moveTo(firstX, firstY);
+      
+      // Draw the rest of the points
+      for (let i = 1; i < history.length - startIdx; i++) {
+        const x = (i / MAX_POINTS) * canvas.width;
+        const y = canvas.height / 2 - history[startIdx + i] * SCALE;
+        ctx.lineTo(x, y);
+      }
+      
+      ctx.strokeStyle = '#008cff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
   }
 
   function noteFromFrequency(freq, baseA = 442) {
