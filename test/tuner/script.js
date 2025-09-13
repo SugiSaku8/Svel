@@ -21,10 +21,29 @@
   const MAX_POINTS = 1000;
 
   function updateGraph() {
-    // Always request the next animation frame first to ensure smooth updates
-    requestAnimationFrame(updateGraph);
+    // Clear the canvas with a slight fade effect for trail
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw background grid
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.2)';
+    ctx.lineWidth = 1;
+    
+    // Draw horizontal grid lines
+    for (let y = 0; y < canvas.height; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    
+    // Draw vertical grid lines
+    for (let x = 0; x < canvas.width; x += 20) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
     
     // Draw baseline
     ctx.beginPath();
@@ -33,8 +52,36 @@
     ctx.strokeStyle = '#aaa';
     ctx.stroke();
     
-    // Draw graph line
-    if (history.length > 0) {
+    // Draw center line (blue vertical line in the middle)
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.strokeStyle = 'rgba(0, 140, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Always show some graph movement, even with no history
+    if (history.length === 0) {
+      const time = Date.now() / 1000;
+      const wave1 = Math.sin(time * 1.5) * 20;
+      const wave2 = Math.sin(time * 0.7) * 10;
+      const wave3 = Math.sin(time * 2.2) * 5;
+      const subtleMovement = wave1 + wave2 + wave3;
+      
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        const t = (x / canvas.width) * 2 * Math.PI;
+        const y = canvas.height / 2 + Math.sin(t + time) * 10 + subtleMovement;
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.strokeStyle = 'rgba(0, 140, 255, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else if (history.length > 0) {
       ctx.beginPath();
       const SCALE = 2; // pixel per cent for better visibility
       const startIdx = Math.max(0, history.length - MAX_POINTS);
@@ -132,15 +179,24 @@
     const freq = autoCorrelate(buffer, audioCtx.sampleRate);
     if (DEBUG) console.log('autoCorrelate ->', freq);
     const baseA = parseFloat(baseFreqSlider.value);
+    const time = Date.now() / 1000; // Current time in seconds for smooth animation
     
-    if (freq !== -1) {
+    // Always keep the graph moving, even when no sound is detected
+    if (history.length >= MAX_POINTS) history.shift();
+    
+    // Process sound if detected, otherwise create a gentle wave
+    if (freq > 0) {
       const midi = noteFromFrequency(freq, baseA);
       const noteFreq = freqFromNote(midi, baseA);
-      const cents = Math.floor(1200 * Math.log2(freq / noteFreq));
+      const cents = 1200 * Math.log2(freq / noteFreq);
       const system = noteSystemSelect.value;
-      if (DEBUG) console.log(`Detected freq ${freq.toFixed(2)} Hz, note ${noteName(midi, system)}, cents ${cents}`);
+      
+      if (DEBUG) console.log(`Detected freq ${freq.toFixed(2)} Hz, note ${noteName(midi, system)}, cents ${cents.toFixed(2)}`);
+      
+      // Update the display
       noteSpan.textContent = noteName(midi, system);
-      centsSpan.textContent = cents > 0 ? `+${cents}` : cents;
+      const displayCents = Math.round(cents * 10) / 10;
+      centsSpan.textContent = displayCents > 0 ? `+${displayCents.toFixed(1)}` : displayCents.toFixed(1);
       
       // Check if sound is stable
       let isStable = false;
@@ -154,54 +210,88 @@
         statusDiv.style.color = isStable ? 'green' : '#c00';
       }
       
-      // Add current cents to history with smoothing
-      if (history.length >= MAX_POINTS) history.shift();
+      // Add some natural movement to the line, even when stable
+      const timeOffset = Math.sin(time * 2) * 0.1;
+      const movement = isStable ? timeOffset * 0.5 : timeOffset * 2;
       
-      // Add some smoothing to the values
+      // Smooth the value
       const lastValue = history.length > 0 ? history[history.length - 1] : 0;
-      const smoothedCents = isStable ? 0 : (lastValue * 0.7 + cents * 0.3);
+      const targetValue = isStable ? movement : cents;
+      const smoothedCents = lastValue * 0.7 + targetValue * 0.3;
       
       history.push(smoothedCents);
     } else {
-      // No sound detected - add subtle movement
+      // No sound detected - show a gentle wave animation
       noteSpan.textContent = '--';
-      centsSpan.textContent = '0';
+      centsSpan.textContent = '0.0';
       statusDiv.textContent = '';
       
-      if (history.length >= MAX_POINTS) history.shift();
+      // Create a more visible wave pattern when no sound is detected
+      const wave1 = Math.sin(time * 1.5) * 20;
+      const wave2 = Math.sin(time * 0.7) * 10;
+      const wave3 = Math.sin(time * 2.2) * 5;
+      const subtleMovement = wave1 + wave2 + wave3;
       
-      // Add subtle movement that varies over time
-      const time = Date.now() / 1000; // Current time in seconds
-      const subtleMovement = Math.sin(time * 2) * 0.2; // Very subtle movement
-      history.push(subtleMovement);
+      // Add some randomness to make it more organic
+      const randomOffset = (Math.random() - 0.5) * 2;
+      
+      // Smooth the movement but keep it more dynamic
+      const lastValue = history.length > 0 ? history[history.length - 1] : 0;
+      const smoothedMovement = lastValue * 0.7 + (subtleMovement + randomOffset) * 0.3;
+      
+      history.push(smoothedMovement);
+      
+      // Force a graph update
+      updateGraph();
     }
     
     // Schedule next process call with requestAnimationFrame for smooth updates
     requestAnimationFrame(process);
   }
 
-  // 初期描画
-  updateGraph();
-
-  function init() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      statusDiv.textContent = 'お使いのブラウザはマイク入力に対応していません';
-      return;
+  // グラフの更新を独立して行う
+  function startGraphAnimation() {
+    let lastTime = 0;
+    const fps = 30;
+    const frameInterval = 1000 / fps;
+    
+    function animate(timestamp) {
+      // フレームレートを制御
+      if (timestamp - lastTime >= frameInterval) {
+        lastTime = timestamp;
+        updateGraph();
+      }
+      requestAnimationFrame(animate);
     }
-    navigator.mediaDevices.getUserMedia({ audio: true })
+    
+    // アニメーションを開始
+    requestAnimationFrame(animate);
+  }
+
+  // 初期化関数
+  function init() {
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       .then(stream => {
         const source = audioCtx.createMediaStreamSource(stream);
         source.connect(analyser);
         process();
-      }).catch(err => {
-        statusDiv.textContent = 'マイクへのアクセスが拒否されました';
-        console.error(err);
+      })
+      .catch(err => {
+        console.error('Error accessing microphone:', err);
+        alert('マイクへのアクセスに失敗しました。マイクの使用が許可されていることを確認してください。');
+        // マイクが使えなくてもグラフのアニメーションは続行
+        startGraphAnimation();
       });
+    
+    // グラフのアニメーションを開始
+    startGraphAnimation();
   }
 
+  // イベントリスナーの設定
   baseFreqSlider.addEventListener('input', () => {
     baseFreqLabel.textContent = baseFreqSlider.value;
   });
 
+  // ページ読み込み時に初期化
   window.addEventListener('load', init);
 })();
