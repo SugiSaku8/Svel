@@ -18,7 +18,8 @@
   const DEBUG = true;
 
   let history = [];
-  const MAX_POINTS = 300;
+  const MAX_POINTS = 500;
+  let lastCent = 0;
 
   function updateGraph() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -105,6 +106,7 @@
     analyser.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtx.sampleRate);
     if (DEBUG) console.log('autoCorrelate ->', freq);
+    let centsForHistory = lastCent;
     if (freq !== -1) {
       const baseA = parseFloat(baseFreqSlider.value);
       const midi = noteFromFrequency(freq, baseA);
@@ -116,7 +118,9 @@
       centsSpan.textContent = cents > 0 ? `+${cents}` : cents;
       // history
       if (history.length >= MAX_POINTS) history.shift();
-      history.push(cents);
+      centsForHistory = cents;
+      lastCent = cents;
+      history.push(centsForHistory);
       updateGraph();
       // stability indicator
       if (history.length >= 30) {
@@ -127,6 +131,10 @@
         statusDiv.textContent = std < 5 ? '安定しています' : '';
         statusDiv.style.color = std < 5 ? 'green' : '#c00';
       }
+    } else {
+      // no valid freq; still push last cent to advance graph
+      if (history.length >= MAX_POINTS) history.shift();
+      history.push(centsForHistory);
     }
     // 常にグラフを更新（ベースライン表示のため）
     updateGraph();
