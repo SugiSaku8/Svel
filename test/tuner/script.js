@@ -143,7 +143,7 @@
       statusDiv.textContent = '';
     }
     
-    // Always add to history
+    // Always add to history and update graph
     if (history.length >= MAX_POINTS) history.shift();
     history.push(centsForHistory);
     
