@@ -18,7 +18,7 @@
   const DEBUG = true;
 
   let history = [];
-  const MAX_POINTS = 500;
+  const MAX_POINTS = 1000;
   let lastCent = 0;
 
   function updateGraph() {
