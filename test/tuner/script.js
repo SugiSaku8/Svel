@@ -14,6 +14,8 @@
   const statusDiv = document.getElementById('status');
   const canvas = document.getElementById('graph');
   const ctx = canvas.getContext('2d');
+  // Debug flag for console logging
+  const DEBUG = true;
 
   let history = [];
   const MAX_POINTS = 300;
@@ -22,9 +24,10 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     ctx.moveTo(0, canvas.height / 2);
+    const SCALE = 2; // pixel per cent for better visibility
     history.forEach((cent, idx) => {
       const x = (idx / MAX_POINTS) * canvas.width;
-      const y = canvas.height / 2 - cent; // scale 1 pixel per cent
+      const y = canvas.height / 2 - cent * SCALE;
       ctx.lineTo(x, y);
     });
     ctx.strokeStyle = '#008cff';
@@ -86,12 +89,12 @@
       }
       corr = 1 - corr / (SIZE / 2);
       correlations[offset] = corr;
-      if (corr > 0.9 && corr > bestCorrelation) {
+      if (corr > 0.7 && corr > bestCorrelation) {
         bestCorrelation = corr;
         bestOffset = offset;
       }
     }
-    if (bestCorrelation > 0.9) {
+    if (bestCorrelation > 0.7) {
       const frequency = sampleRate / bestOffset;
       return frequency;
     }
@@ -101,12 +104,14 @@
   function process() {
     analyser.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtx.sampleRate);
+    if (DEBUG) console.log('autoCorrelate ->', freq);
     if (freq !== -1) {
       const baseA = parseFloat(baseFreqSlider.value);
       const midi = noteFromFrequency(freq, baseA);
       const noteFreq = freqFromNote(midi, baseA);
       const cents = Math.floor(1200 * Math.log2(freq / noteFreq));
       const system = noteSystemSelect.value;
+      if (DEBUG) console.log(`Detected freq ${freq.toFixed(2)} Hz, note ${noteName(midi, system)}, cents ${cents}`);
       noteSpan.textContent = noteName(midi, system);
       centsSpan.textContent = cents > 0 ? `+${cents}` : cents;
       // history
