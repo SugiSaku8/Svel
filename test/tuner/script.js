@@ -19,7 +19,6 @@
 
   let history = [];
   const MAX_POINTS = 1000;
-  let lastCent = 0;
 
   function updateGraph() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -106,9 +105,10 @@
     analyser.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtx.sampleRate);
     if (DEBUG) console.log('autoCorrelate ->', freq);
-    let centsForHistory = lastCent;
+    const baseA = parseFloat(baseFreqSlider.value);
+    let centsForHistory = 0; // 0 cent (center line) by default
+    
     if (freq !== -1) {
-      const baseA = parseFloat(baseFreqSlider.value);
       const midi = noteFromFrequency(freq, baseA);
       const noteFreq = freqFromNote(midi, baseA);
       const cents = Math.floor(1200 * Math.log2(freq / noteFreq));
@@ -116,27 +116,38 @@
       if (DEBUG) console.log(`Detected freq ${freq.toFixed(2)} Hz, note ${noteName(midi, system)}, cents ${cents}`);
       noteSpan.textContent = noteName(midi, system);
       centsSpan.textContent = cents > 0 ? `+${cents}` : cents;
-      // history
-      if (history.length >= MAX_POINTS) history.shift();
-      centsForHistory = cents;
-      lastCent = cents;
-      history.push(centsForHistory);
-      updateGraph();
-      // stability indicator
+      
+      // Check if sound is stable
+      let isStable = false;
       if (history.length >= 30) {
         const recent = history.slice(-30);
         const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
         const variance = recent.reduce((a, b) => a + (b - avg) ** 2, 0) / recent.length;
         const std = Math.sqrt(variance);
-        statusDiv.textContent = std < 5 ? '安定しています' : '';
-        statusDiv.style.color = std < 5 ? 'green' : '#c00';
+        isStable = std < 5;
+        statusDiv.textContent = isStable ? '安定しています' : '';
+        statusDiv.style.color = isStable ? 'green' : '#c00';
+      }
+      
+      // Only update history if sound is not stable
+      if (!isStable) {
+        centsForHistory = cents;
+        lastCent = cents;
+      } else {
+        centsForHistory = 0; // Flat line when stable
       }
     } else {
-      // no valid freq; still push last cent to advance graph
-      if (history.length >= MAX_POINTS) history.shift();
-      history.push(centsForHistory);
+      // No sound detected
+      noteSpan.textContent = '--';
+      centsSpan.textContent = '0';
+      statusDiv.textContent = '';
     }
-    // 常にグラフを更新（ベースライン表示のため）
+    
+    // Always add to history
+    if (history.length >= MAX_POINTS) history.shift();
+    history.push(centsForHistory);
+    
+    // Update graph and continue processing
     updateGraph();
     requestAnimationFrame(process);
   }
