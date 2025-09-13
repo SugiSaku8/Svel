@@ -21,6 +21,9 @@
   const MAX_POINTS = 1000;
 
   function updateGraph() {
+    // Always request the next animation frame first to ensure smooth updates
+    requestAnimationFrame(updateGraph);
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Draw baseline
@@ -41,11 +44,21 @@
       const firstY = canvas.height / 2 - history[startIdx] * SCALE;
       ctx.moveTo(firstX, firstY);
       
-      // Draw the rest of the points
+      // Draw the rest of the points with smoothing
       for (let i = 1; i < history.length - startIdx; i++) {
         const x = (i / MAX_POINTS) * canvas.width;
-        const y = canvas.height / 2 - history[startIdx + i] * SCALE;
-        ctx.lineTo(x, y);
+        // Add a small random value to prevent the line from being completely flat
+        const randomOffset = (Math.random() - 0.5) * 0.1;
+        const y = canvas.height / 2 - (history[startIdx + i] + randomOffset) * SCALE;
+        
+        // Use quadratic curves for smoother lines
+        if (i === 1) {
+          ctx.lineTo(x, y);
+        } else {
+          const xc = (x + (i-1) / MAX_POINTS * canvas.width) / 2;
+          const yc = (y + (canvas.height / 2 - (history[startIdx + i - 1] + randomOffset) * SCALE)) / 2;
+          ctx.quadraticCurveTo(xc, yc, x, y);
+        }
       }
       
       ctx.strokeStyle = '#008cff';
@@ -141,21 +154,29 @@
         statusDiv.style.color = isStable ? 'green' : '#c00';
       }
       
-      // Add current cents to history
+      // Add current cents to history with smoothing
       if (history.length >= MAX_POINTS) history.shift();
-      history.push(isStable ? 0 : cents);
+      
+      // Add some smoothing to the values
+      const lastValue = history.length > 0 ? history[history.length - 1] : 0;
+      const smoothedCents = isStable ? 0 : (lastValue * 0.7 + cents * 0.3);
+      
+      history.push(smoothedCents);
     } else {
-      // No sound detected - push a random value between -1 and 1 to keep the line moving
+      // No sound detected - add subtle movement
       noteSpan.textContent = '--';
       centsSpan.textContent = '0';
       statusDiv.textContent = '';
       
       if (history.length >= MAX_POINTS) history.shift();
-      history.push((Math.random() * 2 - 1) * 0.1); // Tiny random movement
+      
+      // Add subtle movement that varies over time
+      const time = Date.now() / 1000; // Current time in seconds
+      const subtleMovement = Math.sin(time * 2) * 0.2; // Very subtle movement
+      history.push(subtleMovement);
     }
     
-    // Always update graph and continue processing
-    updateGraph();
+    // Schedule next process call with requestAnimationFrame for smooth updates
     requestAnimationFrame(process);
   }
 
