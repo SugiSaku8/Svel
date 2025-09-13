@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Tuner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>チューナー</h1>
+        <div class="controls">
+            <label for="baseFreq">基準周波数 (300–500Hz): <span id="baseFreqLabel">442</span>Hz</label>
+            <input type="range" id="baseFreq" min="300" max="500" value="442">
+        </div>
+        <div class="controls">
+            <label for="noteSystem">音名表記:</label>
+            <select id="noteSystem">
+                <option value="en" selected>英語 (C, C#)</option>
+                <option value="solfege">ドレミ (Do, Do#)</option>
+                <option value="de">ドイツ式 (C, Cis)</option>
+                <option value="jp">日本式 (ハ, 嬰ハ)</option>
+            </select>
+        </div>
+        <div class="readout">
+            <span id="note">--</span>
+            <span id="cents">0</span> cent
+        </div>
+        <canvas id="graph" width="600" height="200"></canvas>
+        <div id="status"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
