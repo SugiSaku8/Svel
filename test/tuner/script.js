@@ -106,7 +106,6 @@
     const freq = autoCorrelate(buffer, audioCtx.sampleRate);
     if (DEBUG) console.log('autoCorrelate ->', freq);
     const baseA = parseFloat(baseFreqSlider.value);
-    let centsForHistory = 0; // 0 cent (center line) by default
     
     if (freq !== -1) {
       const midi = noteFromFrequency(freq, baseA);
@@ -129,25 +128,20 @@
         statusDiv.style.color = isStable ? 'green' : '#c00';
       }
       
-      // Only update history if sound is not stable
-      if (!isStable) {
-        centsForHistory = cents;
-        lastCent = cents;
-      } else {
-        centsForHistory = 0; // Flat line when stable
-      }
+      // Add current cents to history
+      if (history.length >= MAX_POINTS) history.shift();
+      history.push(isStable ? 0 : cents);
     } else {
-      // No sound detected
+      // No sound detected - push a random value between -1 and 1 to keep the line moving
       noteSpan.textContent = '--';
       centsSpan.textContent = '0';
       statusDiv.textContent = '';
+      
+      if (history.length >= MAX_POINTS) history.shift();
+      history.push((Math.random() * 2 - 1) * 0.1); // Tiny random movement
     }
     
-    // Always add to history and update graph
-    if (history.length >= MAX_POINTS) history.shift();
-    history.push(centsForHistory);
-    
-    // Update graph and continue processing
+    // Always update graph and continue processing
     updateGraph();
     requestAnimationFrame(process);
   }
