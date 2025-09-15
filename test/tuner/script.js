@@ -1,5 +1,5 @@
 // script.js
-// Web Tuner without external dependencies
+// 外部依存なしのウェブチューナー
 (() => {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const analyser = audioCtx.createAnalyser();
@@ -14,31 +14,41 @@
   const statusDiv = document.getElementById('status');
   const canvas = document.getElementById('graph');
   const ctx = canvas.getContext('2d');
-  // Debug flag for console logging
+  // コンソールログ用のデバッグフラグ
   const DEBUG = true;
 
   let history = [];
   const MAX_POINTS = 1000;
 
   function updateGraph() {
-    // Clear the canvas completely with a solid color
+    // キャンバスを完全にクリア
     ctx.save();
+    // コンテキストを完全にリセット
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Ensure no shadow effects
+    // すべての描画効果を無効化
     ctx.shadowColor = 'transparent';
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
     ctx.shadowBlur = 0;
+    ctx.filter = 'none';
+    
+    // アンチエイリアシングを無効化
     ctx.imageSmoothingEnabled = false;
     
-    // Draw background grid
+    // サブピクセルレンダリングを無効化
+    ctx.translate(0.5, 0.5);
+    
+    // 線の描画スタイルをリセット
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // 背景グリッドを描画
     ctx.strokeStyle = 'rgba(200, 200, 200, 0.2)';
     ctx.lineWidth = 1;
     
-    // Draw horizontal grid lines
+    // 水平グリッド線を描画
     for (let y = 0; y < canvas.height; y += 20) {
       ctx.beginPath();
       ctx.moveTo(0, y);
@@ -46,7 +56,7 @@
       ctx.stroke();
     }
     
-    // Draw vertical grid lines
+    // 垂直グリッド線を描画
     for (let x = 0; x < canvas.width; x += 20) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -54,24 +64,16 @@
       ctx.stroke();
     }
     
-    // Draw baseline
+    // ベースラインを描画
     ctx.beginPath();
     ctx.moveTo(0, canvas.height / 2);
     ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.strokeStyle = '#aaa';
-    ctx.shadowColor = 'transparent';
     ctx.stroke();
     
-    // Draw center line (blue vertical line in the middle)
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.strokeStyle = 'rgba(0, 140, 255, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.shadowColor = 'transparent';
-    ctx.stroke();
+
     
-    // Always show some graph movement, even with no history
+    // 履歴がなくてもグラフを動かす
     if (history.length === 0) {
       const time = Date.now() / 1000;
       const wave1 = Math.sin(time * 1.5) * 20;
@@ -90,51 +92,56 @@
         }
       }
       ctx.strokeStyle = 'rgba(0, 140, 255, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = 1;
       ctx.stroke();
     } else {
-      const SCALE = 2; // pixel per cent for better visibility
+      const SCALE = 2; // 視認性向上のためのピクセル/セント比
       const startIdx = Math.max(0, history.length - MAX_POINTS);
       const pointsToDraw = Math.min(MAX_POINTS, history.length);
       const xStep = canvas.width / pointsToDraw;
       
-      // Calculate the starting index based on the current history length
+      // 現在の履歴長に基づいて開始インデックスを計算
       const startHistoryIdx = Math.max(0, history.length - pointsToDraw);
       
-      // Start a new path for the graph line
+      // メインキャンバスに直接描画（一時キャンバスは使用しない）
       ctx.beginPath();
       
-      // Move to the first point
+      // 最初のポイントに移動
       const firstX = 0;
-      const firstY = canvas.height / 2 - history[startHistoryIdx] * SCALE;
+      const firstY = Math.round(canvas.height / 2 - history[startHistoryIdx] * SCALE);
       ctx.moveTo(firstX, firstY);
       
-      // Draw the rest of the points with simple lines
-      ctx.beginPath();
-      let firstPoint = true;
-      for (let i = 0; i < pointsToDraw; i++) {
-        const x = i * xStep;
-        const y = canvas.height / 2 - history[startHistoryIdx + i] * SCALE;
-        if (firstPoint) {
-          ctx.moveTo(x, y);
-          firstPoint = false;
-        } else {
-          ctx.lineTo(x, y);
-        }
+      // ポイントを結ぶ線を描画
+      for (let i = 1; i < pointsToDraw; i++) {
+        const x = Math.round(i * xStep);
+        const y = Math.round(canvas.height / 2 - history[startHistoryIdx + i] * SCALE);
+        ctx.lineTo(x, y);
       }
       
+      // 線のスタイルを設定（影なし）
       ctx.strokeStyle = '#008cff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1; // 1pxの線
+      ctx.lineCap = 'butt'; // 線の端を四角く
+      ctx.lineJoin = 'miter'; // 線の接続部をシャープに
+      
+      // すべての描画効果を無効化
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.filter = 'none';
+      ctx.globalAlpha = 1.0;
+      
+      // 線を描画
       ctx.stroke();
+      
+      // コンテキストの状態を復元
       ctx.restore();
     }
   }
 
   function noteFromFrequency(freq, baseA = 442) {
-    const semitone = 12 * Math.log2(freq / baseA) + 57; // MIDI note number (A4=57)
+    const semitone = 12 * Math.log2(freq / baseA) + 57; // MIDIノート番号 (A4=57)
     return Math.round(semitone);
   }
 
@@ -159,7 +166,7 @@
   }
 
   function autoCorrelate(buf, sampleRate) {
-    // from Chris Wilson's tuner algorithm
+    // Chris Wilsonのチューナーアルゴリズムより
     let SIZE = buf.length;
     let rms = 0;
     for (let i = 0; i < SIZE; i++) {
@@ -167,7 +174,7 @@
       rms += val * val;
     }
     rms = Math.sqrt(rms / SIZE);
-    if (rms < 0.01) return -1; // too quiet
+    if (rms < 0.01) return -1; // 音が小さすぎる
 
     let lastBest = -1;
     let bestOffset = -1;
@@ -198,12 +205,12 @@
     const freq = autoCorrelate(buffer, audioCtx.sampleRate);
     if (DEBUG) console.log('autoCorrelate ->', freq);
     const baseA = parseFloat(baseFreqSlider.value);
-    const time = Date.now() / 1000; // Current time in seconds for smooth animation
+    const time = Date.now() / 1000;    // スムーズなアニメーションのための現在時刻（秒）
     
-    // Always keep the graph moving, even when no sound is detected
+    // 音が検出されなくてもグラフを動かし続ける
     if (history.length >= MAX_POINTS) history.shift();
     
-    // Process sound if detected, otherwise create a gentle wave
+    // 音が検出された場合は処理、そうでない場合はゆらぎを生成
     if (freq > 0) {
       const midi = noteFromFrequency(freq, baseA);
       const noteFreq = freqFromNote(midi, baseA);
@@ -212,12 +219,12 @@
       
       if (DEBUG) console.log(`Detected freq ${freq.toFixed(2)} Hz, note ${noteName(midi, system)}, cents ${cents.toFixed(2)}`);
       
-      // Update the display
+      // 表示を更新
       noteSpan.textContent = noteName(midi, system);
       const displayCents = Math.round(cents * 10) / 10;
       centsSpan.textContent = displayCents > 0 ? `+${displayCents.toFixed(1)}` : displayCents.toFixed(1);
       
-      // Check if sound is stable
+      // 音が安定しているかチェック
       let isStable = false;
       if (history.length >= 30) {
         const recent = history.slice(-30);
@@ -229,42 +236,42 @@
         statusDiv.style.color = isStable ? 'green' : '#c00';
       }
       
-      // Add some natural movement to the line, even when stable
+      // 安定していても自然な動きを追加
       const timeOffset = Math.sin(time * 2) * 0.1;
       const movement = isStable ? timeOffset * 0.5 : timeOffset * 2;
       
-      // Smooth the value
+      // 値をスムージング
       const lastValue = history.length > 0 ? history[history.length - 1] : 0;
       const targetValue = isStable ? movement : cents;
       const smoothedCents = lastValue * 0.7 + targetValue * 0.3;
       
       history.push(smoothedCents);
     } else {
-      // No sound detected - show a gentle wave animation
+      // 音が検出されません - ゆるやかな波のアニメーションを表示
       noteSpan.textContent = '--';
       centsSpan.textContent = '0.0';
       statusDiv.textContent = '';
       
-      // Create a more visible wave pattern when no sound is detected
+      // 音が検出されない場合の見やすい波パターンを生成
       const wave1 = Math.sin(time * 1.5) * 20;
       const wave2 = Math.sin(time * 0.7) * 10;
       const wave3 = Math.sin(time * 2.2) * 5;
       const subtleMovement = wave1 + wave2 + wave3;
       
-      // Add some randomness to make it more organic
+      // より自然な動きのためのランダム性を追加
       const randomOffset = (Math.random() - 0.5) * 2;
       
-      // Smooth the movement but keep it more dynamic
+      // 動きをスムーズにしつつ、ダイナミックさを維持
       const lastValue = history.length > 0 ? history[history.length - 1] : 0;
       const smoothedMovement = lastValue * 0.7 + (subtleMovement + randomOffset) * 0.3;
       
       history.push(smoothedMovement);
       
-      // Force a graph update
+      // グラフを強制的に更新
       updateGraph();
     }
     
-    // Schedule next process call with requestAnimationFrame for smooth updates
+    // スムーズな更新のためにrequestAnimationFrameで次の処理をスケジュール
     requestAnimationFrame(process);
   }
 
@@ -275,7 +282,7 @@
     const frameInterval = 1000 / fps;
     
     function animate(timestamp) {
-      // フレームレートを制御
+      // フレームレートを30fpsに制御
       if (timestamp - lastTime >= frameInterval) {
         lastTime = timestamp;
         updateGraph();
@@ -283,7 +290,7 @@
       requestAnimationFrame(animate);
     }
     
-    // アニメーションを開始
+    // アニメーションループを開始
     requestAnimationFrame(animate);
   }
 
@@ -306,11 +313,11 @@
     startGraphAnimation();
   }
 
-  // イベントリスナーの設定
+  // イベントリスナーを設定
   baseFreqSlider.addEventListener('input', () => {
     baseFreqLabel.textContent = baseFreqSlider.value;
   });
 
-  // ページ読み込み時に初期化
+  // ページ読み込み完了時に初期化を実行
   window.addEventListener('load', init);
 })();
