@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音楽基礎練プログラム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>音楽基礎練プログラム</h1>
+            <div class="controls">
+                <button id="newProgram">新規プログラム</button>
+                <button id="saveProgram">プログラムを保存</button>
+                <button id="loadProgram">プログラムを読み込み</button>
+                <button id="shareProgram">共有リンクを生成</button>
+            </div>
+        </header>
+
+        <div class="program-editor">
+            <div class="program-settings">
+                <h2>プログラム設定</h2>
+                <div class="form-group">
+                    <label for="programName">プログラム名:</label>
+                    <input type="text" id="programName" placeholder="練習プログラム名を入力">
+                </div>
+                <div class="form-group">
+                    <label for="bpm">BPM:</label>
+                    <input type="number" id="bpm" min="30" max="300" value="120">
+                </div>
+                <div class="form-group">
+                    <label for="timeSignature">拍子:</label>
+                    <select id="timeSignature">
+                        <option value="4/4">4/4</option>
+                        <option value="3/4">3/4</option>
+                        <option value="6/8">6/8</option>
+                        <option value="5/4">5/4</option>
+                        <option value="7/8">7/8</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="key">キー:</label>
+                    <select id="key">
+                        <option value="C">C</option>
+                        <option value="C#">C#</option>
+                        <option value="D">D</option>
+                        <option value="D#">D#</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="F#">F#</option>
+                        <option value="G">G</option>
+                        <option value="G#">G#</option>
+                        <option value="A">A</option>
+                        <option value="A#">A#</option>
+                        <option value="B">B</option>
+                    </select>
+                    <select id="scaleType">
+                        <option value="major">メジャー</option>
+                        <option value="minor">マイナー</option>
+                        <option value="dorian">ドリアン</option>
+                        <option value="mixolydian">ミクソリディアン</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="exercises">
+                <h2>練習項目 <button id="addExercise">＋ 追加</button></h2>
+                <div id="exerciseList">
+                    <!-- 練習項目がここに追加されます -->
+                </div>
+            </div>
+        </div>
+
+        <div class="preview">
+            <h2>プレビュー</h2>
+            <div class="metronome">
+                <div class="metronome-display">
+                    <div id="metronomeBeat" class="beat">1</div>
+                    <div id="metronomeBar" class="bar">| | | |</div>
+                </div>
+                <div class="metronome-controls">
+                    <button id="playPause">▶ 再生</button>
+                    <button id="stop">■ 停止</button>
+                </div>
+            </div>
+            <div class="exercise-preview">
+                <h3>現在の練習: <span id="currentExercise">-</span></h3>
+                <div id="exerciseDisplay">
+                    <!-- 練習内容が表示されます -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- モーダル -->
+    <div id="exerciseModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>練習項目を追加</h3>
+            <div class="form-group">
+                <label for="exerciseType">練習タイプ:</label>
+                <select id="exerciseType">
+                    <option value="scale">スケール</option>
+                    <option value="arpeggio">アルペジオ</option>
+                    <option value="interval">インターバル</option>
+                    <option value="chord">コード</option>
+                    <option value="custom">カスタム</option>
+                </select>
+            </div>
+            <div id="exerciseOptions">
+                <!-- 動的にオプションが挿入されます -->
+            </div>
+            <div class="form-group">
+                <label for="exerciseDuration">練習時間 (分):</label>
+                <input type="number" id="exerciseDuration" min="1" max="60" value="5">
+            </div>
+            <div class="form-group">
+                <label for="exerciseNotes">メモ:</label>
+                <textarea id="exerciseNotes" placeholder="練習のポイントや注意点を記入"></textarea>
+            </div>
+            <button id="saveExercise">追加</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
