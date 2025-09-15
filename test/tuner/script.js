@@ -91,12 +91,11 @@
           ctx.lineTo(x, y);
         }
       }
-      ctx.strokeStyle = 'rgba(0, 140, 255, 0.5)';
+      ctx.strokeStyle = 'rgba(0, 140, 255,0.5)';
       ctx.lineWidth = 1;
       ctx.stroke();
     } else {
-      const SCALE = 2; // 視認性向上のためのピクセル/セント比
-      const startIdx = Math.max(0, history.length - MAX_POINTS);
+      const SCALE = 1; // 視認性向上のためのピクセル/セント比
       const pointsToDraw = Math.min(MAX_POINTS, history.length);
       const xStep = canvas.width / pointsToDraw;
       
