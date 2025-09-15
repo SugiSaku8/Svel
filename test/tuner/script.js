@@ -14,6 +14,11 @@
   const statusDiv = document.getElementById('status');
   const canvas = document.getElementById('graph');
   const ctx = canvas.getContext('2d');
+  ctx.shadowColor = 'transparent';
+ctx.shadowOffsetX = 0;
+ctx.shadowOffsetY = 0;
+ctx.shadowBlur = 0;
+ctx.filter = 'none';
   // コンソールログ用のデバッグフラグ
   const DEBUG = true;
 
@@ -21,28 +26,37 @@
   const MAX_POINTS = 1000;
 
   function updateGraph() {
-    // キャンバスを完全にクリア
-    ctx.save();
-    // コンテキストを完全にリセット
+    // コンテキストの状態を完全にリセット
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    
+    // シャドウとフィルターを無効化
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.filter = 'none';
+    
+    // キャンバスを完全にクリア
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 白で塗りつぶし
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // すべての描画効果を無効化
-    ctx.shadowColor = 'transparent';
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.shadowBlur = 0;
-    ctx.filter = 'none';
+    // 描画設定を保存
+    ctx.save();
     
-    // アンチエイリアシングを無効化
+    // 描画品質の設定
     ctx.imageSmoothingEnabled = false;
+    ctx.globalCompositeOperation = 'source-over';
     
     // サブピクセルレンダリングを無効化
     ctx.translate(0.5, 0.5);
     
-    // 線の描画スタイルをリセット
-    ctx.globalCompositeOperation = 'source-over';
+    // 線のスタイルをリセット
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
     
     // 背景グリッドを描画
     ctx.strokeStyle = 'rgba(200, 200, 200, 0.2)';
@@ -117,22 +131,14 @@
         ctx.lineTo(x, y);
       }
       
-      // 線のスタイルを設定（影なし）
+      // 線のスタイルを設定
       ctx.strokeStyle = '#008cff';
-      ctx.lineWidth = 1; // 1pxの線
-      ctx.lineCap = 'butt'; // 線の端を四角く
-      ctx.lineJoin = 'miter'; // 線の接続部をシャープに
-      
-      // すべての描画効果を無効化
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      ctx.filter = 'none';
-      ctx.globalAlpha = 1.0;
       
       // 線を描画
       ctx.stroke();
+      
+      // コンテキストをリセット
+      ctx.globalAlpha = 1.0;
       
       // コンテキストの状態を復元
       ctx.restore();

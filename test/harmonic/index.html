@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マルチオーディオ解析ツール</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>マルチオーディオ解析ツール</h1>
+        
+        <div class="input-section">
+            <h2>オーディオ入力</h2>
+            <div class="audio-inputs">
+                <div class="audio-input">
+                    <h3>入力 1</h3>
+                    <input type="file" accept="audio/*" class="audio-file" data-index="0">
+                    <button class="record-btn" data-index="0">録音開始</button>
+                    <audio controls class="audio-preview" data-index="0"></audio>
+                </div>
+                <div class="audio-input">
+                    <h3>入力 2</h3>
+                    <input type="file" accept="audio/*" class="audio-file" data-index="1">
+                    <button class="record-btn" data-index="1">録音開始</button>
+                    <audio controls class="audio-preview" data-index="1"></audio>
+                </div>
+            </div>
+            <button id="add-input">入力追加</button>
+        </div>
+
+        <div class="analysis-section">
+            <h2>解析結果</h2>
+            <div class="visualization">
+                <canvas id="waveform"></canvas>
+                <canvas id="spectrum"></canvas>
+                <canvas id="harmonic"></canvas>
+            </div>
+            <div class="analysis-results">
+                <h3>解析結果</h3>
+                <div id="feedback"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="analyze">解析開始</button>
+            <button id="play-mix">ミックス再生</button>
+            <button id="stop">停止</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
