@@ -21,9 +21,18 @@
   const MAX_POINTS = 1000;
 
   function updateGraph() {
-    // Clear the canvas with a slight fade effect for trail
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    // Clear the canvas completely with a solid color
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Ensure no shadow effects
+    ctx.shadowColor = 'transparent';
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 0;
+    ctx.imageSmoothingEnabled = false;
     
     // Draw background grid
     ctx.strokeStyle = 'rgba(200, 200, 200, 0.2)';
@@ -50,6 +59,7 @@
     ctx.moveTo(0, canvas.height / 2);
     ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.strokeStyle = '#aaa';
+    ctx.shadowColor = 'transparent';
     ctx.stroke();
     
     // Draw center line (blue vertical line in the middle)
@@ -58,6 +68,7 @@
     ctx.lineTo(canvas.width / 2, canvas.height);
     ctx.strokeStyle = 'rgba(0, 140, 255, 0.3)';
     ctx.lineWidth = 1;
+    ctx.shadowColor = 'transparent';
     ctx.stroke();
     
     // Always show some graph movement, even with no history
@@ -80,37 +91,45 @@
       }
       ctx.strokeStyle = 'rgba(0, 140, 255, 0.5)';
       ctx.lineWidth = 2;
+      ctx.shadowColor = 'transparent';
       ctx.stroke();
-    } else if (history.length > 0) {
-      ctx.beginPath();
+    } else {
       const SCALE = 2; // pixel per cent for better visibility
       const startIdx = Math.max(0, history.length - MAX_POINTS);
+      const pointsToDraw = Math.min(MAX_POINTS, history.length);
+      const xStep = canvas.width / pointsToDraw;
       
-      // Start from the first point
+      // Calculate the starting index based on the current history length
+      const startHistoryIdx = Math.max(0, history.length - pointsToDraw);
+      
+      // Start a new path for the graph line
+      ctx.beginPath();
+      
+      // Move to the first point
       const firstX = 0;
-      const firstY = canvas.height / 2 - history[startIdx] * SCALE;
+      const firstY = canvas.height / 2 - history[startHistoryIdx] * SCALE;
       ctx.moveTo(firstX, firstY);
       
-      // Draw the rest of the points with smoothing
-      for (let i = 1; i < history.length - startIdx; i++) {
-        const x = (i / MAX_POINTS) * canvas.width;
-        // Add a small random value to prevent the line from being completely flat
-        const randomOffset = (Math.random() - 0.5) * 0.1;
-        const y = canvas.height / 2 - (history[startIdx + i] + randomOffset) * SCALE;
-        
-        // Use quadratic curves for smoother lines
-        if (i === 1) {
-          ctx.lineTo(x, y);
+      // Draw the rest of the points with simple lines
+      ctx.beginPath();
+      let firstPoint = true;
+      for (let i = 0; i < pointsToDraw; i++) {
+        const x = i * xStep;
+        const y = canvas.height / 2 - history[startHistoryIdx + i] * SCALE;
+        if (firstPoint) {
+          ctx.moveTo(x, y);
+          firstPoint = false;
         } else {
-          const xc = (x + (i-1) / MAX_POINTS * canvas.width) / 2;
-          const yc = (y + (canvas.height / 2 - (history[startIdx + i - 1] + randomOffset) * SCALE)) / 2;
-          ctx.quadraticCurveTo(xc, yc, x, y);
+          ctx.lineTo(x, y);
         }
       }
       
       ctx.strokeStyle = '#008cff';
       ctx.lineWidth = 2;
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
       ctx.stroke();
+      ctx.restore();
     }
   }
 
