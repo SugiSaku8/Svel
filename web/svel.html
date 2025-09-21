@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>Music Lab - 統合音楽ツール</title>
+    <style>
+        /* Base Styles & Variables */
+        :root {
+            /* Color Palette */
+            --primary: #007AFF;
+            --primary-dark: #0062CC;
+            --secondary: #5AC8FA;
+            --background: #F2F2F7;
+            --surface: #FFFFFF;
+            --surface-secondary: #F2F2F7;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --border: #D1D1D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --error: #FF3B30;
+            
+            /* Spacing */
+            --spacing-xxs: 4px;
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 48px;
+            
+            /* Border Radius */
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 20px;
+            --border-radius-xl: 28px;
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+            
+            /* Transitions */
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.5s ease;
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #000000;
+                --surface: #1C1C1E;
+                --surface-secondary: #2C2C2E;
+                --text-primary: #FFFFFF;
+                --text-secondary: #8E8E93;
+                --border: #38383A;
+            }
+        }
+
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--background);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xl);
+            color: var(--primary);
+        }
+
+        .logo i {
+            margin-right: var(--spacing-sm);
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links li {
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin: var(--spacing-xxs) 0;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background-color var(--transition-fast);
+            font-weight: 500;
+        }
+
+        .nav-links li:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-links li.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .nav-links li i {
+            margin-right: var(--spacing-sm);
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: var(--spacing-lg);
+            transition: margin-left var(--transition-normal);
+            max-width: calc(100% - 260px);
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            border: 1px solid var(--border);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            gap: var(--spacing-xs);
+        }
+        
+        .btn-danger {
+            background-color: #FF3B30;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #FF2D1A;
+            transform: translateY(-1px);
+        }
+
+        .btn i {
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--surface-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border);
+        }
+
+        /* Tuner Styles */
+        .tuner-container {
+            padding: var(--spacing-md);
+        }
+        
+        .tuner-display {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+            position: relative;
+        }
+        
+        .note-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: var(--spacing-md);
+            color: var(--primary);
+            height: 5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .note-display span:first-child {
+            font-size: 4rem;
+        }
+        
+        .note-display span:last-child {
+            font-size: 2rem;
+            align-self: flex-end;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cents-display {
+            position: relative;
+            height: 60px;
+            margin: 0 auto;
+            max-width: 400px;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+        }
+        
+        #tuner-cents {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            transition: transform 0.1s ease-out;
+            width: 100%;
+            text-align: center;
+            line-height: 60px;
+        }
+        
+        .cents-label {
+            position: absolute;
+            bottom: var(--spacing-xs);
+            right: var(--spacing-sm);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        #tuner-graph {
+            width: 100%;
+            height: 200px;
+            background-color: var(--surface);
+            border-radius: var(--border-radius-md);
+            margin: var(--spacing-md) 0;
+            display: block;
+        }
+        
+        .tuner-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+        
+        .tuner-controls .btn {
+            grid-column: 1 / -1;
+        }
+        
+        @media (max-width: 768px) {
+            .tuner-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .note-display {
+                font-size: 3rem;
+                height: 4rem;
+            }
+            
+            .note-display span:first-child {
+                font-size: 3rem;
+            }
+            
+            .note-display span:last-child {
+                font-size: 1.5rem;
+            }
+            
+            #tuner-cents {
+                font-size: 1.2rem;
+                line-height: 50px;
+            }
+            
+            .cents-display {
+                height: 50px;
+            }
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius-md);
+            font-size: 1rem;
+            background-color: var(--surface);
+            color: var(--text-primary);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                z-index: 1000;
+                padding: var(--spacing-sm);
+                flex-direction: row;
+                justify-content: space-around;
+                border-top: 1px solid var(--border);
+                border-right: none;
+            }
+
+            .logo {
+                display: none;
+            }
+
+            .nav-links {
+                display: flex;
+                width: 100%;
+                margin: 0;
+            }
+
+            .nav-links li {
+                flex: 1;
+                flex-direction: column;
+                text-align: center;
+                padding: var(--spacing-xs) var(--spacing-xxs);
+                font-size: 0.8rem;
+                margin: 0;
+            }
+
+            .nav-links li i {
+                margin-right: 0;
+                margin-bottom: var(--spacing-xxs);
+                font-size: 1.2rem;
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                margin-bottom: 80px;
+                padding: var(--spacing-md);
+                max-width: 100%;
+            }
+
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-md);
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* iPhone 15 Safe Area Support */
+        @supports (padding: max(0px)) {
+            body {
+                padding: env(safe-area-inset-top) env(safe-area-inset-right) 
+                         env(safe-area-inset-bottom) env(safe-area-inset-left);
+            }
+            
+            .app-container {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            
+            .sidebar {
+                padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
+                padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom));
+            }
+            
+            .main-content {
+                padding: calc(var(--spacing-lg) + env(safe-area-inset-top)) 
+                         calc(var(--spacing-lg) + env(safe-area-inset-right)) 
+                         calc(var(--spacing-lg) + env(safe-area-inset-bottom)) 
+                         calc(260px + var(--spacing-lg) + env(safe-area-inset-left));
+            }
+
+            @media (max-width: 768px) {
+                .sidebar {
+                    padding-top: var(--spacing-sm);
+                    padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
+                }
+                
+                .main-content {
+                    padding: calc(var(--spacing-md) + env(safe-area-inset-top)) 
+                             var(--spacing-md) 
+                             calc(var(--spacing-md) + 60px) 
+                             var(--spacing-md);
+                }
+            }
+        }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- iOS specific meta tags -->
+    <meta name="apple-mobile-web-app-title" content="Music Lab">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+</head>
+<body>
+    <div id="app-root"></div>
+
+    <script>
+        // Music Lab App
+        (function() {
+            'use strict';
+
+            // App configuration
+            const config = {
+                name: 'Music Lab',
+                version: '1.0.0',
+                defaultTab: 'practice'
+            };
+
+            // DOM Elements
+            let appContainer;
+            let currentTab = config.defaultTab;
+
+            // Initialize the app
+            function init() {
+                createAppStructure();
+                setupEventListeners();
+                switchTab(currentTab);
+                
+                // Initialize service worker if supported
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        navigator.serviceWorker.register('/sw.js')
+                            .catch(error => {
+                                console.error('ServiceWorker registration failed:', error);
+                            });
+                    });
+                }
+            }
+
+            // Create the app HTML structure
+            function createAppStructure() {
+                const appRoot = document.getElementById('app-root');
+                
+                appRoot.innerHTML = `
+                    <div class="app-container">
+                        <!-- Sidebar Navigation -->
+                        <nav class="sidebar">
+                            <div class="logo">
+                                <i class="fas fa-music"></i>
+                                <span>${config.name}</span>
+                            </div>
+                            <ul class="nav-links">
+                                <li class="active" data-tab="practice">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>練習プログラム</span>
+                                </li>
+                                <li data-tab="tuner">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <span>チューナー</span>
+                                </li>
+                                <li data-tab="analyzer">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>オーディオ解析</span>
+                                </li>
+                            </ul>
+                        </nav>
+
+                        <!-- Main Content -->
+                        <main class="main-content">
+                            <!-- Practice Tab -->
+                            <section id="practice" class="tab-content active">
+                                <div class="content-header">
+                                    <h1>練習プログラム</h1>
+                                    <div class="header-actions">
+                                        <button id="newProgram" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> 新規
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <p>練習プログラム機能は準備中です。</p>
+                                </div>
+                            </section>
+
+                            <!-- Tuner Tab -->
+                            <section id="tuner" class="tab-content">
+                                <div class="content-header">
+                                    <h1>チューナー</h1>
+                                </div>
+                                <div class="card">
+                                    <div class="tuner-container">
+                                        <div class="tuner-display">
+                                            <div class="note-display">
+                                                <span id="tuner-note">--</span>
+                                                <span id="tuner-octave"></span>
+                                            </div>
+                                            <div class="cents-display">
+                                                <div id="tuner-cents">0</div>
+                                                <div class="cents-label">cent</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <canvas id="tuner-graph" width="800" height="200"></canvas>
+                                        
+                                        <div class="tuner-controls">
+                                            <div class="form-group">
+                                                <label for="base-freq">基準周波数 (Hz):</label>
+                                                <input type="number" id="base-freq" min="400" max="500" step="0.1" value="442" class="freq-input">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="note-system">音名表記:</label>
+                                                <select id="note-system" class="form-control">
+                                                    <option value="en" selected>英語 (C, C#)</option>
+                                                    <option value="solfege">ドレミ (Do, Do#)</option>
+                                                    <option value="de">ドイツ式 (C, Cis)</option>
+                                                    <option value="jp">日本式 (ハ, 嬰ハ)</option>
+                                                </select>
+                                            </div>
+                                            <button id="start-tuner" class="btn btn-primary">
+                                                <i class="fas fa-microphone"></i> 測定開始
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Audio Analyzer Tab -->
+                            <section id="analyzer" class="tab-content">
+                                <div class="content-header">
+                                    <h1>オーディオ解析</h1>
+                                </div>
+                                <div class="card">
+                                    <p>オーディオ解析機能は準備中です。</p>
+                                </div>
+                            </section>
+                        </main>
+                    </div>
+                `;
+
+                appContainer = document.querySelector('.app-container');
+            }
+
+            // Set up event listeners
+            function setupEventListeners() {
+                // Tab switching
+                document.querySelectorAll('.nav-links li').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabId = tab.getAttribute('data-tab');
+                        switchTab(tabId);
+                    });
+                });
+
+                // New program button
+                const newProgramBtn = document.getElementById('newProgram');
+                if (newProgramBtn) {
+                    newProgramBtn.addEventListener('click', () => {
+                        alert('新規プログラムを作成します');
+                    });
+                }
+
+                // Handle window resize
+                window.addEventListener('resize', handleResize);
+            }
+
+            // Switch between tabs
+            function switchTab(tabId) {
+                // Update active tab in navigation
+                document.querySelectorAll('.nav-links li').forEach(tab => {
+                    if (tab.getAttribute('data-tab') === tabId) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+
+                // Show active tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+
+                currentTab = tabId;
+                
+                // Scroll to top when switching tabs
+                window.scrollTo(0, 0);
+                
+                // Initialize tab-specific functionality
+                initTab(tabId);
+            }
+
+            // Initialize tab-specific functionality
+            function initTab(tabId) {
+                switch (tabId) {
+                    case 'practice':
+                        initPracticeTab();
+                        break;
+                    case 'tuner':
+                        initTunerTab();
+                        break;
+                    case 'analyzer':
+                        initAnalyzerTab();
+                        break;
+                }
+            }
+
+            // Initialize Practice tab
+            function initPracticeTab() {
+                // Practice tab initialization code will go here
+                console.log('Initializing Practice tab');
+            }
+
+            // Tuner variables
+            let audioContext;
+            let analyser;
+            let mediaStreamSource;
+            let rafId;
+            let isListening = false;
+            let baseFrequency = 442;
+            let noteSystem = 'en';
+            
+            // Note names for different systems
+            const noteNames = {
+                en: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+                solfege: ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'],
+                de: ['C', 'Cis', 'D', 'Dis', 'E', 'F', 'Fis', 'G', 'Gis', 'A', 'Ais', 'H'],
+                jp: ['ハ', '嬰ハ', 'ニ', '嬰ニ', 'ホ', 'ヘ', '嬰ヘ', 'ト', '嬰ト', 'イ', '嬰イ', 'ロ']
+            };
+
+            // Initialize Tuner tab
+            function initTunerTab() {
+                const startButton = document.getElementById('start-tuner');
+                const baseFreqInput = document.getElementById('base-freq');
+                const noteSystemSelect = document.getElementById('note-system');
+                
+                // Initialize audio context on user interaction
+                document.addEventListener('click', initAudioContext, { once: true });
+                
+                // Event listeners
+                startButton.addEventListener('click', toggleTuner);
+                baseFreqInput.addEventListener('input', (e) => {
+                    baseFrequency = parseFloat(e.target.value) || 442;
+                });
+                
+                noteSystemSelect.addEventListener('change', (e) => {
+                    noteSystem = e.target.value;
+                    updateNoteDisplay('--', '');
+                });
+                
+                // Initialize graph
+                initGraph();
+                
+                // Start animation loop
+                animate();
+            }
+            
+            function initAudioContext() {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 2048;
+                } catch (e) {
+                    console.error('Web Audio API is not supported in this browser', e);
+                    alert('このブラウザではオーディオ機能がサポートされていません。Chrome、Firefox、Edge、Safariの最新版をお使いください。');
+                }
+            }
+            
+            function toggleTuner() {
+                const button = document.getElementById('start-tuner');
+                
+                if (!isListening) {
+                    startTuner();
+                    button.innerHTML = '<i class="fas fa-microphone-slash"></i> 測定停止';
+                    button.classList.add('btn-danger');
+                    button.classList.remove('btn-primary');
+                } else {
+                    stopTuner();
+                    button.innerHTML = '<i class="fas fa-microphone"></i> 測定開始';
+                    button.classList.remove('btn-danger');
+                    button.classList.add('btn-primary');
+                    updateNoteDisplay('--', '');
+                    document.getElementById('tuner-cents').textContent = '0';
+                }
+                
+                isListening = !isListening;
+            }
+            
+            async function startTuner() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    if (!audioContext) initAudioContext();
+                    
+                    mediaStreamSource = audioContext.createMediaStreamSource(stream);
+                    mediaStreamSource.connect(analyser);
+                    
+                } catch (err) {
+                    console.error('Error accessing microphone:', err);
+                    alert('マイクへのアクセスに失敗しました。マイクの権限を確認してください。');
+                }
+            }
+            
+            function stopTuner() {
+                if (mediaStreamSource) {
+                    mediaStreamSource.disconnect();
+                    const tracks = mediaStreamSource.mediaStream.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+            }
+            
+            function initGraph() {
+                const canvas = document.getElementById('tuner-graph');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size to match display
+                function resizeCanvas() {
+                    const container = document.querySelector('.tuner-container');
+                    const width = container.clientWidth - 40; // Account for padding
+                    const height = 200;
+                    
+                    canvas.width = width * window.devicePixelRatio;
+                    canvas.height = height * window.devicePixelRatio;
+                    canvas.style.width = width + 'px';
+                    canvas.style.height = height + 'px';
+                    
+                    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                }
+                
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+            }
+            
+            function updateNoteDisplay(note, octave) {
+                document.getElementById('tuner-note').textContent = note;
+                document.getElementById('tuner-octave').textContent = octave;
+            }
+            
+            function updateGraph(ctx, width, height, data) {
+                // Clear canvas
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw center line
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, height / 2);
+                ctx.lineTo(width, height / 2);
+                ctx.stroke();
+                
+                // Draw graph
+                ctx.strokeStyle = '#007AFF';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                const sliceWidth = width * 1.0 / data.length;
+                let x = 0;
+                
+                for (let i = 0; i < data.length; i++) {
+                    const v = data[i] / 255.0;
+                    const y = v * height;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                ctx.stroke();
+            }
+            
+            function autoCorrelate(buffer, sampleRate) {
+                // Implementation of autocorrelation for pitch detection
+                const SIZE = buffer.length;
+                const MAX_SAMPLES = Math.floor(SIZE / 2);
+                let bestOffset = -1;
+                let bestCorrelation = 0;
+                let rms = 0;
+                let foundGoodCorrelation = false;
+                
+                // Calculate RMS
+                for (let i = 0; i < SIZE; i++) {
+                    const val = buffer[i];
+                    rms += val * val;
+                }
+                
+                rms = Math.sqrt(rms / SIZE);
+                
+                if (rms < 0.01) return -1;
+                
+                // Autocorrelation
+                const correlations = new Array(MAX_SAMPLES).fill(0);
+                
+                for (let offset = 0; offset < MAX_SAMPLES; offset++) {
+                    let correlation = 0;
+                    
+                    for (let i = 0; i < MAX_SAMPLES; i++) {
+                        correlation += Math.abs(buffer[i] - buffer[i + offset]);
+                    }
+                    
+                    correlation = 1 - (correlation / MAX_SAMPLES);
+                    correlations[offset] = correlation;
+                    
+                    if (correlation > 0.9 && correlation > bestCorrelation) {
+                        bestCorrelation = correlation;
+                        bestOffset = offset;
+                        foundGoodCorrelation = true;
+                    } else if (foundGoodCorrelation && correlation < 0.8) {
+                        return sampleRate / bestOffset;
+                    }
+                }
+                
+                if (bestCorrelation > 0.01) {
+                    return sampleRate / bestOffset;
+                }
+                
+                return -1;
+            }
+            
+            function noteFromFrequency(frequency) {
+                const noteNum = 12 * (Math.log2(frequency) - Math.log2(440.0)) + 69;
+                return Math.round(noteNum);
+            }
+            
+            function frequencyFromNoteNumber(note) {
+                return 440 * Math.pow(2, (note - 69) / 12);
+            }
+            
+            function centsOffFromPitch(frequency, note) {
+                return Math.floor(1200 * Math.log2(frequency / frequencyFromNoteNumber(note)));
+            }
+            
+            function animate() {
+                rafId = requestAnimationFrame(animate);
+                
+                if (!analyser || !isListening) return;
+                
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const timeDomainData = new Float32Array(analyser.fftSize);
+                
+                analyser.getByteFrequencyData(dataArray);
+                analyser.getFloatTimeDomainData(timeDomainData);
+                
+                // Update graph
+                const canvas = document.getElementById('tuner-graph');
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width / window.devicePixelRatio;
+                const height = canvas.height / window.devicePixelRatio;
+                
+                updateGraph(ctx, width, height, dataArray);
+                
+                // Process audio for pitch detection
+                const frequency = autoCorrelate(timeDomainData, audioContext.sampleRate);
+                
+                if (frequency !== -1 && frequency > 50 && frequency < 2000) {
+                    const midiNote = noteFromFrequency(frequency);
+                    const note = midiNote % 12;
+                    const octave = Math.floor(midiNote / 12) - 1;
+                    const cents = centsOffFromPitch(frequency, midiNote);
+                    
+                    // Update display
+                    updateNoteDisplay(noteNames[noteSystem][note] || '--', octave);
+                    document.getElementById('tuner-cents').textContent = cents;
+                    
+                    // Update needle position
+                    const centsElement = document.getElementById('tuner-cents');
+                    const offset = Math.max(-50, Math.min(50, cents)) * 2; // Limit to ±50 cents
+                    centsElement.style.transform = `translateX(${offset}%)`;
+                    
+                    // Color based on tuning accuracy
+                    if (Math.abs(cents) < 5) {
+                        centsElement.style.color = '#34C759'; // Green for in-tune
+                    } else if (Math.abs(cents) < 20) {
+                        centsElement.style.color = '#FF9500'; // Orange for close
+                    } else {
+                        centsElement.style.color = '#FF3B30'; // Red for out-of-tune
+                    }
+                }
+            }
+
+            // Initialize Analyzer tab
+            function initAnalyzerTab() {
+                // Analyzer tab initialization code will go here
+                console.log('Initializing Analyzer tab');
+            }
+
+            // Handle window resize
+            function handleResize() {
+                // Add any responsive behavior here
+            }
+
+            // Start the app when the DOM is fully loaded
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+</html>
