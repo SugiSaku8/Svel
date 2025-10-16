@@ -6,7 +6,7 @@
   <title>Svel — 音を見る。音に触れる。</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-primary: #1B1C1F;
@@ -37,10 +37,97 @@
       flex-direction: column;
       letter-spacing: -0.5%;
       line-height: 1.2;
+      position: relative;
     }
 
-    /* 上部：音名・周波数 */
+    /* 全画面共通：ヘッダー */
     .header {
+      height: 12%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .header-title {
+      font-size: 18pt;
+      font-weight: 600;
+    }
+
+    .header-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0.7;
+    }
+
+    /* 全画面共通：タブバー */
+    .tab-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 8%;
+      background: var(--bg-secondary);
+      z-index: 100;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      font-size: 10pt;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .tab-item.active {
+      color: var(--accent);
+    }
+
+    /* 全画面共通：画面切り替えアニメーション */
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 20%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transform: translateY(100%);
+    }
+
+    .screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    /* トースト */
+    .toast {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 16px;
+      font-size: 16pt;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 200;
+      transition: opacity 0.3s;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* --- 🔊 チューナー画面 --- */
+    .tuner-header {
       height: 20%;
       display: flex;
       flex-direction: column;
@@ -49,34 +136,27 @@
       padding: 16px;
     }
 
-    .note-name {
+    .tuner-note-name {
       font-size: 24pt;
       font-weight: 600;
       font-family: 'Inter', sans-serif;
       margin-bottom: 8px;
-      animation: notePulse 0.3s ease;
+      transition: transform 0.3s ease;
     }
 
-    .frequency {
+    .tuner-frequency {
       font-size: 16pt;
       font-family: 'IBM Plex Mono', monospace;
       color: var(--text-secondary);
     }
 
-    /* 中央：グラフ */
-    .graph-container {
+    .tuner-graph-container {
       height: 40%;
       position: relative;
       overflow: hidden;
     }
 
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .graph-bg {
+    .tuner-graph-bg {
       position: absolute;
       top: 0;
       left: 0;
@@ -86,8 +166,13 @@
       z-index: 0;
     }
 
-    /* 下部：操作パネル */
-    .controls {
+    .tuner-graph-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .tuner-controls {
       height: 40%;
       padding: 24px 16px;
       display: flex;
@@ -95,27 +180,24 @@
       gap: 20px;
     }
 
-    /* 録音ボタン */
-    .record-btn {
+    .tuner-record-btn {
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: #FF3B30;
+      background: var(--pitch-off);
       margin: 0 auto;
       position: relative;
       cursor: pointer;
       box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7);
-      animation: pulse 2s infinite;
+      transition: transform 0.2s ease;
     }
 
-    .record-btn.recording {
+    .tuner-record-btn.recording {
       animation: pulseRed 1.5s infinite;
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
-      70% { box-shadow: 0 0 0 12px rgba(255, 59, 48, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+    .tuner-record-btn:active {
+      transform: scale(0.95);
     }
 
     @keyframes pulseRed {
@@ -124,8 +206,7 @@
       100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
     }
 
-    /* セグメントコントロール */
-    .segment {
+    .tuner-segment {
       display: flex;
       background: var(--bg-secondary);
       border-radius: 12px;
@@ -133,7 +214,7 @@
       height: 44px;
     }
 
-    .segment-btn {
+    .tuner-segment-btn {
       flex: 1;
       background: none;
       border: none;
@@ -142,26 +223,51 @@
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
+      position: relative;
     }
 
-    .segment-btn.active {
+    .tuner-segment-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
       background: var(--accent);
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .tuner-segment-btn.active {
       color: white;
     }
 
-    /* スライダー */
-    .slider-container {
+    .tuner-segment-btn.active::after {
+      transform: translateY(0);
+    }
+
+    .tuner-combo-btn {
+      background: var(--bg-secondary);
+      border: none;
+      color: var(--text-primary);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 14pt;
+      cursor: pointer;
+    }
+
+    .tuner-slider-container {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    .slider-label {
+    .tuner-slider-label {
       font-size: 14pt;
       color: var(--text-secondary);
     }
 
-    .slider {
+    .tuner-slider {
       -webkit-appearance: none;
       width: 100%;
       height: 6px;
@@ -170,7 +276,7 @@
       outline: none;
     }
 
-    .slider::-webkit-slider-thumb {
+    .tuner-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 20px;
       height: 20px;
@@ -180,52 +286,385 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
 
-    /* アニメーション */
     @keyframes notePulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
 
-    @keyframes glowMatch {
-      0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); }
-      70% { box-shadow: 0 0 0 16px rgba(52, 199, 89, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    .pulse-note {
+      animation: notePulse 0.3s ease;
     }
 
-    .glow-match {
+    @keyframes glowMatch {
+      0% { background: radial-gradient(circle at center, rgba(52, 199, 89, 0.1), transparent 70%); }
+      50% { background: radial-gradient(circle at center, rgba(52, 199, 89, 0.3), transparent 70%); }
+      100% { background: radial-gradient(circle at center, rgba(52, 199, 89, 0), transparent 70%); }
+    }
+
+    .glow-match-bg {
       animation: glowMatch 0.5s ease;
+    }
+
+    /* --- 🎙️ 分析画面 --- */
+    .analyzer-container {
+      padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .analyzer-waveform-container {
+      height: 30%;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .analyzer-waveform-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .analyzer-controls {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .analyzer-record-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--pitch-off);
+      cursor: pointer;
+      box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7);
+      animation: pulseRed 2s infinite;
+    }
+
+    .analyzer-results {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .analyzer-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 16pt;
+    }
+
+    .analyzer-card-title {
+      color: var(--text-secondary);
+      font-size: 14pt;
+    }
+
+    .analyzer-card-value {
+      font-size: 18pt;
+      font-weight: 600;
+    }
+
+    /* --- 🪄 練習画面 --- */
+    .practice-container {
+      padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .practice-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .practice-title {
+      font-size: 18pt;
+      font-weight: 600;
+    }
+
+    .practice-subtitle {
+      color: var(--text-secondary);
+      font-size: 14pt;
+    }
+
+    .practice-progress-container {
+      height: 10px;
+      background: var(--bg-secondary);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+
+    .practice-progress-bar {
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      border-radius: 5px;
+      transition: width 0.5s ease;
+    }
+
+    .practice-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .practice-card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .practice-card:active {
+      transform: scale(0.98);
+    }
+
+    .practice-card-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(90, 200, 250, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20pt;
+    }
+
+    .practice-card-content h3 {
+      font-size: 16pt;
+    }
+
+    .practice-card-content p {
+      color: var(--text-secondary);
+      font-size: 14pt;
+    }
+
+    .practice-staff-container {
+      height: 100px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      position: relative;
+      margin-top: 16px;
+    }
+
+    .staff-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .staff-note {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
   </style>
 </head>
 <body>
+  <!-- トースト -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ヘッダー -->
   <div class="header">
-    <div class="note-name" id="noteName">A4</div>
-    <div class="frequency" id="frequency">440.2 Hz</div>
+    <div class="header-icon">👤</div>
+    <div class="header-title" id="headerTitle">Tuner</div>
+    <div class="header-icon">⚙️</div>
   </div>
 
-  <div class="graph-container">
-    <div class="graph-bg"></div>
-    <canvas id="pitchGraph"></canvas>
-  </div>
-
-  <div class="controls">
-    <div class="record-btn" id="recordBtn"></div>
-
-    <div class="segment">
-      <button class="segment-btn active">Tuner</button>
-      <button class="segment-btn">Analyzer</button>
-      <button class="segment-btn">Practice</button>
+  <!-- 画面：チューナー -->
+  <div class="screen active" id="tunerScreen">
+    <div class="tuner-header">
+      <div class="tuner-note-name" id="noteName">A4</div>
+      <div class="tuner-frequency" id="frequency">440.2 Hz</div>
     </div>
 
-    <div class="slider-container">
-      <div class="slider-label">A = <span id="refHz">440</span> Hz</div>
-      <input type="range" min="440" max="444" value="440" step="0.1" class="slider" id="refSlider">
+    <div class="tuner-graph-container">
+      <div class="tuner-graph-bg" id="graphBg"></div>
+      <canvas class="tuner-graph-canvas" id="pitchGraph"></canvas>
+    </div>
+
+    <div class="tuner-controls">
+      <div class="tuner-record-btn" id="recordBtn"></div>
+
+      <div class="tuner-segment">
+        <button class="tuner-segment-btn active" data-mode="tuner">Tuner</button>
+        <button class="tuner-segment-btn" data-mode="analyzer">Analyzer</button>
+        <button class="tuner-segment-btn" data-mode="practice">Practice</button>
+      </div>
+
+      <button class="tuner-combo-btn">Equal</button>
+
+      <div class="tuner-slider-container">
+        <div class="tuner-slider-label">A = <span id="refHz">440</span> Hz</div>
+        <input type="range" min="440" max="444" value="440" step="0.1" class="tuner-slider" id="refSlider">
+      </div>
+    </div>
+  </div>
+
+  <!-- 画面：分析 -->
+  <div class="screen" id="analyzerScreen">
+    <div class="analyzer-container">
+      <div class="analyzer-waveform-container">
+        <canvas class="analyzer-waveform-canvas" id="waveformCanvas"></canvas>
+      </div>
+
+      <div class="analyzer-controls">
+        <div class="analyzer-record-btn" id="analyzerRecordBtn"></div>
+      </div>
+
+      <div class="analyzer-results">
+        <div class="analyzer-card">
+          <div class="analyzer-card-title">ピッチ安定度</div>
+          <div class="analyzer-card-value">93%</div>
+        </div>
+        <div class="analyzer-card">
+          <div class="analyzer-card-title">タイミング精度</div>
+          <div class="analyzer-card-value">87%</div>
+        </div>
+        <div class="analyzer-card">
+          <div class="analyzer-card-title">ダイナミクス</div>
+          <div class="analyzer-card-value">A−</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画面：練習 -->
+  <div class="screen" id="practiceScreen">
+    <div class="practice-container">
+      <div class="practice-header">
+        <div class="practice-title">今週のテーマ</div>
+        <div class="practice-subtitle">リズムを感じる一週間</div>
+      </div>
+
+      <div class="practice-progress-container">
+        <div class="practice-progress-bar" id="practiceProgress"></div>
+      </div>
+
+      <div class="practice-list">
+        <div class="practice-card">
+          <div class="practice-card-icon">🎵</div>
+          <div class="practice-card-content">
+            <h3>メジャースケール練習</h3>
+            <p>1/3 完了</p>
+          </div>
+        </div>
+        <div class="practice-card">
+          <div class="practice-card-icon">🥁</div>
+          <div class="practice-card-content">
+            <h3>16ビートリズム</h3>
+            <p>0/5 完了</p>
+          </div>
+        </div>
+        <div class="practice-card">
+          <div class="practice-card-icon">🎶</div>
+          <div class="practice-card-content">
+            <h3>聴音チャレンジ</h3>
+            <p>2/4 完了</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="practice-staff-container">
+        <div class="staff-line" style="top: 20%;"></div>
+        <div class="staff-line" style="top: 30%;"></div>
+        <div class="staff-line" style="top: 40%;"></div>
+        <div class="staff-line" style="top: 50%;"></div>
+        <div class="staff-line" style="top: 60%;"></div>
+        <div class="staff-note" style="top: 40%; left: 20%;"></div>
+        <div class="staff-note" style="top: 30%; left: 40%;"></div>
+        <div class="staff-note" style="top: 50%; left: 60%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- タブバー -->
+  <div class="tab-bar">
+    <div class="tab-item active" data-tab="tuner">
+      <span>🏠</span>
+      <span>ホーム</span>
+    </div>
+    <div class="tab-item" data-tab="tuner">
+      <span>🔊</span>
+      <span>チューナー</span>
+    </div>
+    <div class="tab-item" data-tab="analyzer">
+      <span>🎧</span>
+      <span>分析</span>
+    </div>
+    <div class="tab-item" data-tab="practice">
+      <span>🪄</span>
+      <span>練習</span>
+    </div>
+    <div class="tab-item" data-tab="collection">
+      <span>🌈</span>
+      <span>コレクション</span>
     </div>
   </div>
 
   <script>
     // DOM
+    const toast = document.getElementById('toast');
+    const headerTitle = document.getElementById('headerTitle');
+    const screens = {
+      tuner: document.getElementById('tunerScreen'),
+      analyzer: document.getElementById('analyzerScreen'),
+      practice: document.getElementById('practiceScreen'),
+    };
+    const tabItems = document.querySelectorAll('.tab-item');
+    const segmentBtns = document.querySelectorAll('.tuner-segment-btn');
+
+    // 画面切り替え
+    function switchScreen(newTab) {
+      Object.values(screens).forEach(screen => screen.classList.remove('active'));
+      screens[newTab]?.classList.add('active');
+
+      tabItems.forEach(item => {
+        item.classList.toggle('active', item.dataset.tab === newTab);
+      });
+
+      // ヘッダー更新
+      const titles = {
+        tuner: 'Tuner',
+        analyzer: 'Analyzer',
+        practice: 'Practice',
+        collection: 'Collection'
+      };
+      headerTitle.textContent = titles[newTab] || 'Svel';
+    }
+
+    tabItems.forEach(item => {
+      item.addEventListener('click', () => {
+        switchScreen(item.dataset.tab);
+      });
+    });
+
+    // セグメントボタン（チューナー内）も画面切り替え
+    segmentBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        segmentBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        switchScreen(btn.dataset.mode);
+      });
+    });
+
+    // --- 🔊 チューナー画面 ---
     const canvas = document.getElementById('pitchGraph');
     const ctx = canvas.getContext('2d');
     const noteNameEl = document.getElementById('noteName');
@@ -233,8 +672,8 @@
     const recordBtn = document.getElementById('recordBtn');
     const refSlider = document.getElementById('refSlider');
     const refHzEl = document.getElementById('refHz');
+    const graphBg = document.getElementById('graphBg');
 
-    // リサイズ
     function resizeCanvas() {
       canvas.width = canvas.clientWidth * window.devicePixelRatio;
       canvas.height = canvas.clientHeight * window.devicePixelRatio;
@@ -243,24 +682,20 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // シミュレーション用データ
     let isRecording = false;
-    let pitchOffset = 0; // ±50 cent
+    let pitchOffset = 0;
     let timeData = [];
-    const maxPoints = 150; // ~3秒分 @ 50fps
+    const maxPoints = 150;
 
-    // 色補間関数
     function interpolateColor(value, min, max) {
       const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
       if (t < 0.5) {
-        // 低音 → 中央
         const t2 = t * 2;
         const r = Math.round(0xFF * (1 - t2) + 0x5A * t2);
         const g = Math.round(0x9F * (1 - t2) + 0xC8 * t2);
         const b = Math.round(0x40 * (1 - t2) + 0xFA * t2);
         return `rgb(${r},${g},${b})`;
       } else {
-        // 中央 → 高音
         const t2 = (t - 0.5) * 2;
         const r = Math.round(0x5A * (1 - t2) + 0x9B * t2);
         const g = Math.round(0xC8 * (1 - t2) + 0x6B * t2);
@@ -269,13 +704,11 @@
       }
     }
 
-    // 描画
     function drawGraph() {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, width, height);
 
-      // グリッド線
       ctx.strokeStyle = 'var(--grid-line)';
       ctx.lineWidth = 1;
       for (let i = -50; i <= 50; i += 10) {
@@ -286,7 +719,6 @@
         ctx.stroke();
       }
 
-      // 中央線（基準）
       ctx.strokeStyle = '#5AC8FA';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -296,7 +728,6 @@
 
       if (timeData.length < 2) return;
 
-      // ピッチライン描画
       ctx.beginPath();
       const pointWidth = width / (timeData.length - 1);
       for (let i = 0; i < timeData.length; i++) {
@@ -308,46 +739,48 @@
           ctx.lineTo(x, y);
         }
       }
-      const color = interpolateColor(pitchOffset, -50, 50);
-      ctx.strokeStyle = Math.abs(pitchOffset) < 2 ? '#34C759' : color;
+      const color = Math.abs(pitchOffset) < 2 ? '#34C759' : interpolateColor(pitchOffset, -50, 50);
+      ctx.strokeStyle = color;
       ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke();
     }
 
-    // シミュレーション：ランダムピッチ変化
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
     function simulatePitch() {
       if (!isRecording) return;
 
-      // 少し揺らぐ
-      pitchOffset += (Math.random() - 0.5) * 4;
+      pitchOffset += (Math.random() - 0.5) * 6;
       pitchOffset = Math.max(-50, Math.min(50, pitchOffset));
 
-      // A4近辺
       const baseFreq = parseFloat(refSlider.value);
       const freq = baseFreq * Math.pow(2, pitchOffset / 1200);
       freqEl.textContent = freq.toFixed(1) + ' Hz';
 
-      // 音名（簡易）
       if (Math.abs(pitchOffset) < 2) {
         noteNameEl.textContent = 'A4';
-        noteNameEl.classList.add('glow-match');
-        setTimeout(() => noteNameEl.classList.remove('glow-match'), 500);
+        noteNameEl.classList.add('pulse-note');
+        graphBg.classList.add('glow-match-bg');
+        setTimeout(() => graphBg.classList.remove('glow-match-bg'), 500);
+        showToast('ぴったり、今の音が美しいです');
       } else if (pitchOffset > 0) {
         noteNameEl.textContent = 'A♯4';
       } else {
         noteNameEl.textContent = 'G♯4';
       }
 
-      // データ追加
       timeData.unshift(pitchOffset);
       if (timeData.length > maxPoints) timeData.pop();
 
       drawGraph();
     }
 
-    // 録音トグル
     recordBtn.addEventListener('click', () => {
       isRecording = !isRecording;
       recordBtn.classList.toggle('recording', isRecording);
@@ -357,24 +790,48 @@
       }
     });
 
-    // スライダー
     refSlider.addEventListener('input', () => {
       refHzEl.textContent = refSlider.value;
     });
 
-    // セグメント
-    document.querySelectorAll('.segment-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-
-    // 初期描画
     drawGraph();
 
-    // シミュレーションループ
-    setInterval(simulatePitch, 33); // ~30fps
+    // --- 🎙️ 分析画面 ---
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const wfCtx = waveformCanvas.getContext('2d');
+
+    function resizeWfCanvas() {
+      waveformCanvas.width = waveformCanvas.clientWidth * window.devicePixelRatio;
+      waveformCanvas.height = waveformCanvas.clientHeight * window.devicePixelRatio;
+      wfCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resizeWfCanvas);
+    resizeWfCanvas();
+
+    function drawWaveform() {
+      const width = waveformCanvas.clientWidth;
+      const height = waveformCanvas.clientHeight;
+      wfCtx.clearRect(0, 0, width, height);
+
+      wfCtx.beginPath();
+      wfCtx.moveTo(0, height / 2);
+      for (let x = 0; x < width; x += 5) {
+        const y = height / 2 + Math.sin(x * 0.1) * 30 * Math.random();
+        wfCtx.lineTo(x, y);
+      }
+      wfCtx.strokeStyle = '#5AC8FA';
+      wfCtx.lineWidth = 2;
+      wfCtx.stroke();
+    }
+    drawWaveform();
+
+    // --- 🪄 練習画面 ---
+    const progress = document.getElementById('practiceProgress');
+    progress.style.width = '40%';
+
+    // メインループ
+    setInterval(simulatePitch, 16.67);
+    setInterval(drawWaveform, 100);
   </script>
 </body>
 </html>
