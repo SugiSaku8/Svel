@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Svel — 音を見る。音に触れる。</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #1B1C1F;
+      --bg-secondary: #2A2B2E;
+      --accent: #5AC8FA;
+      --high-tone: #9B6BFF;
+      --low-tone: #FF9F40;
+      --pitch-match: #34C759;
+      --pitch-off: #FF453A;
+      --grid-line: rgba(255,255,255,0.1);
+      --text-primary: #FFFFFF;
+      --text-secondary: #8E8E93;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      letter-spacing: -0.5%;
+      line-height: 1.2;
+    }
+
+    /* 上部：音名・周波数 */
+    .header {
+      height: 20%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .note-name {
+      font-size: 24pt;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 8px;
+      animation: notePulse 0.3s ease;
+    }
+
+    .frequency {
+      font-size: 16pt;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--text-secondary);
+    }
+
+    /* 中央：グラフ */
+    .graph-container {
+      height: 40%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .graph-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(27,28,31,0.8), rgba(27,28,31,0.95));
+      z-index: 0;
+    }
+
+    /* 下部：操作パネル */
+    .controls {
+      height: 40%;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 録音ボタン */
+    .record-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #FF3B30;
+      margin: 0 auto;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    .record-btn.recording {
+      animation: pulseRed 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 59, 48, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+    }
+
+    @keyframes pulseRed {
+      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+    }
+
+    /* セグメントコントロール */
+    .segment {
+      display: flex;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      overflow: hidden;
+      height: 44px;
+    }
+
+    .segment-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14pt;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .segment-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* スライダー */
+    .slider-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-label {
+      font-size: 14pt;
+      color: var(--text-secondary);
+    }
+
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-secondary);
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    /* アニメーション */
+    @keyframes notePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes glowMatch {
+      0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); }
+      70% { box-shadow: 0 0 0 16px rgba(52, 199, 89, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    }
+
+    .glow-match {
+      animation: glowMatch 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="note-name" id="noteName">A4</div>
+    <div class="frequency" id="frequency">440.2 Hz</div>
+  </div>
+
+  <div class="graph-container">
+    <div class="graph-bg"></div>
+    <canvas id="pitchGraph"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="record-btn" id="recordBtn"></div>
+
+    <div class="segment">
+      <button class="segment-btn active">Tuner</button>
+      <button class="segment-btn">Analyzer</button>
+      <button class="segment-btn">Practice</button>
+    </div>
+
+    <div class="slider-container">
+      <div class="slider-label">A = <span id="refHz">440</span> Hz</div>
+      <input type="range" min="440" max="444" value="440" step="0.1" class="slider" id="refSlider">
+    </div>
+  </div>
+
+  <script>
+    // DOM
+    const canvas = document.getElementById('pitchGraph');
+    const ctx = canvas.getContext('2d');
+    const noteNameEl = document.getElementById('noteName');
+    const freqEl = document.getElementById('frequency');
+    const recordBtn = document.getElementById('recordBtn');
+    const refSlider = document.getElementById('refSlider');
+    const refHzEl = document.getElementById('refHz');
+
+    // リサイズ
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth * window.devicePixelRatio;
+      canvas.height = canvas.clientHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // シミュレーション用データ
+    let isRecording = false;
+    let pitchOffset = 0; // ±50 cent
+    let timeData = [];
+    const maxPoints = 150; // ~3秒分 @ 50fps
+
+    // 色補間関数
+    function interpolateColor(value, min, max) {
+      const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+      if (t < 0.5) {
+        // 低音 → 中央
+        const t2 = t * 2;
+        const r = Math.round(0xFF * (1 - t2) + 0x5A * t2);
+        const g = Math.round(0x9F * (1 - t2) + 0xC8 * t2);
+        const b = Math.round(0x40 * (1 - t2) + 0xFA * t2);
+        return `rgb(${r},${g},${b})`;
+      } else {
+        // 中央 → 高音
+        const t2 = (t - 0.5) * 2;
+        const r = Math.round(0x5A * (1 - t2) + 0x9B * t2);
+        const g = Math.round(0xC8 * (1 - t2) + 0x6B * t2);
+        const b = Math.round(0xFA * (1 - t2) + 0xFF * t2);
+        return `rgb(${r},${g},${b})`;
+      }
+    }
+
+    // 描画
+    function drawGraph() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      // グリッド線
+      ctx.strokeStyle = 'var(--grid-line)';
+      ctx.lineWidth = 1;
+      for (let i = -50; i <= 50; i += 10) {
+        const y = height / 2 - (i / 50) * (height / 2);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // 中央線（基準）
+      ctx.strokeStyle = '#5AC8FA';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
+      ctx.stroke();
+
+      if (timeData.length < 2) return;
+
+      // ピッチライン描画
+      ctx.beginPath();
+      const pointWidth = width / (timeData.length - 1);
+      for (let i = 0; i < timeData.length; i++) {
+        const x = width - i * pointWidth;
+        const y = height / 2 - (timeData[i] / 50) * (height / 2);
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      const color = interpolateColor(pitchOffset, -50, 50);
+      ctx.strokeStyle = Math.abs(pitchOffset) < 2 ? '#34C759' : color;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    // シミュレーション：ランダムピッチ変化
+    function simulatePitch() {
+      if (!isRecording) return;
+
+      // 少し揺らぐ
+      pitchOffset += (Math.random() - 0.5) * 4;
+      pitchOffset = Math.max(-50, Math.min(50, pitchOffset));
+
+      // A4近辺
+      const baseFreq = parseFloat(refSlider.value);
+      const freq = baseFreq * Math.pow(2, pitchOffset / 1200);
+      freqEl.textContent = freq.toFixed(1) + ' Hz';
+
+      // 音名（簡易）
+      if (Math.abs(pitchOffset) < 2) {
+        noteNameEl.textContent = 'A4';
+        noteNameEl.classList.add('glow-match');
+        setTimeout(() => noteNameEl.classList.remove('glow-match'), 500);
+      } else if (pitchOffset > 0) {
+        noteNameEl.textContent = 'A♯4';
+      } else {
+        noteNameEl.textContent = 'G♯4';
+      }
+
+      // データ追加
+      timeData.unshift(pitchOffset);
+      if (timeData.length > maxPoints) timeData.pop();
+
+      drawGraph();
+    }
+
+    // 録音トグル
+    recordBtn.addEventListener('click', () => {
+      isRecording = !isRecording;
+      recordBtn.classList.toggle('recording', isRecording);
+      if (isRecording) {
+        timeData = [];
+        pitchOffset = (Math.random() - 0.5) * 20;
+      }
+    });
+
+    // スライダー
+    refSlider.addEventListener('input', () => {
+      refHzEl.textContent = refSlider.value;
+    });
+
+    // セグメント
+    document.querySelectorAll('.segment-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // 初期描画
+    drawGraph();
+
+    // シミュレーションループ
+    setInterval(simulatePitch, 33); // ~30fps
+  </script>
+</body>
+</html>
