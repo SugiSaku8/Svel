@@ -1,0 +1,173 @@
+/* Basic reset */
+@font-face {
+  font-family: 'zenkaku-auto';
+  src: url('ZenKakuGothicNew-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'zenkaku-light';
+  src: url('ZenKakuGothicNew-Light.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'zenkaku-bold';
+  src: url('ZenKakuGothicNew-Bold.ttf') format('truetype');
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html,body,#root { height: 100%; font-family:'zenkaku-auto', 'zenkaku-light'; }
+
+:root{
+  --bg: #171826;         /* page background (very dark blue) */
+  --accent: #e9fdff;     /* pale circle */
+  --card-top: #7b6fb4;   /* gradient top-ish */
+  --card-bottom: #8b5fb0;/* gradient bottom-ish */
+  --shadow: rgba(0,0,0,0.45);
+  --muted-border: rgba(255,255,255,0.06);
+  --white: #ffffff;
+  --gap: 48px;
+  --max-width: 1200px;
+}
+
+/* page layout */
+body {
+  font-family: "Helvetica Neue", Inter, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+/* container centers content and limits width for reuse */
+.app {
+  width: 100%;
+  max-width: var(--max-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* Top row layout */
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  /* ensure center logo sits exactly center visually */
+}
+
+/* Brand (left) */
+.brand {
+  justify-self: start;
+  font-size: clamp(28px, 4vw, 64px);
+  font-weight: 700;
+  color: var(--white);
+  padding-left: 40px;
+}
+
+/* Date (right) */
+.date {
+  justify-self: end;
+  font-size: clamp(24px, 4vw, 56px);
+  font-weight: 800;
+  padding-right: 40px;
+}
+
+/* Logo circle (center) */
+.logo-circle{
+  width: clamp(140px, 22vw, 260px);
+  height: clamp(140px, 22vw, 260px);
+  border-radius: 50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin: 0 auto;
+  position: relative;
+}
+.logo-circle .flute-svg {
+  width: 72%;
+  height: 72%;
+  display:block;
+}
+
+/* Cards row: three equal columns */
+.card-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+  padding: 20px 40px;
+  align-items: end;
+}
+
+/* Reusable action card component */
+.action-card {
+  --radius: 40px;
+  background: linear-gradient(to bottom, rgba(131,117,182,0.95), rgba(139,95,176,0.98));
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  min-height: 220px;
+  display:flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-shadow: 0 10px 18px var(--shadow), inset 0 -6px 6px rgba(0,0,0,0.15);
+  border: 3px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+  position: relative;
+  overflow: visible;
+  outline: none;
+    flex-direction: column;
+  align-items: center;
+
+}
+.action-card img {
+  max-width: 64%;
+  height: auto;
+  margin-bottom: 16px;
+}
+
+/* subtle rim highlight to match original */
+.action-card::before{
+  content:"";
+  position:absolute;
+  left:6px; right:6px; top:6px; bottom:6px;
+  border-radius: calc(var(--radius) - 6px);
+  pointer-events: none;
+  box-shadow: inset 0 6px 8px rgba(255,255,255,0.02);
+}
+
+/* hover/active */
+.action-card:hover { transform: translateY(-6px); box-shadow: 0 18px 28px rgba(0,0,0,0.55); }
+.action-card:active { transform: translateY(-2px); }
+
+/* label text */
+.card-label {
+  font-size: clamp(28px, 5vw, 64px);
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -1px;
+}
+
+.logo-circle {
+  background-color: #ecfeff;
+  border-radius: 50%;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-circle img {
+  max-width: 70%;
+  max-height: 70%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .top-row { grid-template-columns: 1fr auto 1fr; padding: 0 10px; }
+  .brand { padding-left: 8px; text-align: left; }
+  .date  { padding-right: 8px; text-align: right; }
+  .card-row { grid-template-columns: 1fr; gap: 20px; }
+  .action-card { min-height: 160px; padding: 32px 20px; }
+}
